@@ -7,6 +7,7 @@ import { UserModel } from "../model/UserModel";
 import { RegisterModel } from "../model/RegisterModel";
 import { LoginModel } from "../model/LoginModel";
 import { ResponseLoginModel } from "../model/ResponseLoginModel";
+import { getUserFromJWT } from "../utility/getUserIdFromJWT";
 
 export class AuthController {
 
@@ -85,6 +86,37 @@ export class AuthController {
             }
 
             next({ error, status: 404 })
+        }
+    }
+    async update(request: Request, response: Response, next: NextFunction) {
+        const user: any = await getUserFromJWT(request)
+        
+        const id=user.id
+        const {firstName,lastName}: RegisterModel = request.body;
+    
+    
+       try {
+        const update=  await this.userRepository.update({id},{firstName,lastName})
+        return {status:true,update}
+       } catch (error:any) {
+        next({error, status:404})
+       }
+    }
+    async changePassword(request: Request, response: Response, next: NextFunction) {
+        const user: any = await getUserFromJWT(request)
+       
+        const id=user.id
+        const {oldPassword,newPassword} = request.body;
+    
+        const isValid = await bcrypt.compare(oldPassword, user.password)
+
+        if (isValid) {
+           const newPasswordBcrypt= await bcrypt.hash(newPassword, 10)
+           const update=  await this.userRepository.update({id},{password:newPasswordBcrypt})
+           return {status:true,update}
+        }else{
+            const error:any=new Error("şifre degiştir")
+            next({error, status:404})
         }
     }
 }
