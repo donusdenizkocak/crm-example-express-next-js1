@@ -72,7 +72,12 @@ export class UserController {
         try {
             return await this.userRepository.save(user)
         } catch (error) {
-            next(error)
+        if(error.code===undefined){
+            error.message=error.map((k:any) =>{
+                return {constraints:k.constraints,proporty:k.proporty}
+            })
+        }
+        next({error, status:404})
         }
     }
 
